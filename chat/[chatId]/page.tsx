@@ -1,9 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, use } from "react"; // Added 'use' from React
 
-export default function ChatPage({ params }: { params: { chatId: string } }) {
-  const chatId = params.chatId;
+// Updated the Type for params to be a Promise
+export default function ChatPage({ params }: { params: Promise<{ chatId: string }> }) {
+  
+  // ✅ In Next.js 15 Client Components, we use the 'use' hook to unwrap the params promise
+  const resolvedParams = use(params);
+  const chatId = resolvedParams.chatId;
 
   const [messages, setMessages] = useState<any[]>([]);
   const [text, setText] = useState("");
@@ -11,37 +15,46 @@ export default function ChatPage({ params }: { params: { chatId: string } }) {
   // ✅ Fetch messages
   useEffect(() => {
     const fetchMessages = async () => {
-      const res = await fetch(`/api/chat/messages/${chatId}`);
-      const data = await res.json();
-      setMessages(data);
+      try {
+        const res = await fetch(`/api/chat/messages/${chatId}`);
+        if (!res.ok) throw new Error("Failed to fetch");
+        const data = await res.json();
+        setMessages(data);
+      } catch (err) {
+        console.error("Error fetching messages:", err);
+      }
     };
 
-    fetchMessages();
+    if (chatId) fetchMessages();
   }, [chatId]);
 
   // ✅ Send message
   const sendMessage = async () => {
     if (!text.trim()) return;
 
-    await fetch("/api/chat/send", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chatId,
-        text,
-      }),
-    });
+    try {
+      await fetch("/api/chat/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chatId,
+          text,
+        }),
+      });
 
-    setText("");
+      setText("");
 
-    // Reload messages after sending
-    const res = await fetch(`/api/chat/messages/${chatId}`);
-    setMessages(await res.json());
+      // Reload messages after sending
+      const res = await fetch(`/api/chat/messages/${chatId}`);
+      const updatedData = await res.json();
+      setMessages(updatedData);
+    } catch (err) {
+      console.error("Error sending message:", err);
+    }
   };
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-100">
-
       {/* Header */}
       <div className="bg-black text-white p-4 font-bold">
         Chat Room 💬
@@ -50,7 +63,7 @@ export default function ChatPage({ params }: { params: { chatId: string } }) {
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {messages.length === 0 ? (
-          <p className="text-gray-500">No messages yet...</p>
+          <p className="text-gray-500 text-center mt-10">No messages yet...</p>
         ) : (
           messages.map((msg) => (
             <div
@@ -64,17 +77,18 @@ export default function ChatPage({ params }: { params: { chatId: string } }) {
       </div>
 
       {/* Input Box */}
-      <div className="p-4 bg-white flex gap-2 border-t">
+      <div className="p-4 bg-white flex gap-2 border-t sticky bottom-0">
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && sendMessage()} // Better UX: send on Enter
           placeholder="Type message..."
-          className="flex-1 border px-4 py-2 rounded-xl"
+          className="flex-1 border px-4 py-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500"
         />
 
         <button
           onClick={sendMessage}
-          className="bg-orange-500 text-white px-6 py-2 rounded-xl font-bold"
+          className="bg-orange-500 hover:bg-orange-600 transition-colors text-white px-6 py-2 rounded-xl font-bold"
         >
           Send
         </button>
