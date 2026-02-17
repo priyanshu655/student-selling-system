@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongoose";
-import Message from "@/models/Message";
+import Message from "@/models/message";
 import { getAuthUser } from "@/lib/auth";
 
 export async function POST(req: Request) {
