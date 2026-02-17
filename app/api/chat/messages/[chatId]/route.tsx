@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"; // Use NextRequest for better typing
 import { connectDB } from "@/lib/mongoose";
-import Message from "@/models/Message"; // Double check: is it 'Message' or 'message'?
+import Message from "@/models/message"; // Double check: is it 'Message' or 'message'?
 import { getAuthUser } from "@/lib/auth";
 
 export async function GET(
