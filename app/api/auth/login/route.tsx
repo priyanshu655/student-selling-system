@@ -53,13 +53,13 @@ export async function POST(req: Request) {
     );
 
     // ✅ 6️⃣ Set Cookie INSIDE Response
-    response.cookies.set("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 7, // 7 days
-    });
+   response.cookies.set("token", token, {
+  httpOnly: true,
+  secure: true, // MUST in production
+  sameSite: "none", // REQUIRED for Render HTTPS
+  path: "/",
+  maxAge: 60 * 60 * 24 * 7,
+});
 
     return response;
   } catch (err) {
